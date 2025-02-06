@@ -1,0 +1,106 @@
+#include <iostream>
+#include <filesystem>
+#include <fstream>
+#include <string>
+#include <algorithm>
+
+namespace fs = std::filesystem;
+
+void listDirectory(const std::string& path) {
+    std::cout << "Contents of " << path << ":\n";
+    for (const auto& entry : fs::directory_iterator(path)) {
+        std::cout << entry.path().filename().string() << "\n";
+    }
+}
+
+void createDirectory(const std::string& path) {
+    if (fs::create_directory(path)) {
+        std::cout << "Directory created: " << path << "\n";
+    } else {
+        std::cout << "Failed to create directory or directory already exists: " << path << "\n";
+    }
+}
+
+void copyFile(const std::string& source, const std::string& destination) {
+    try {
+        fs::copy(source, destination, fs::copy_options::overwrite_existing);
+        std::cout << "File copied from " << source << " to " << destination << "\n";
+    } catch (const std::exception& e) {
+        std::cerr << "Error copying file: " << e.what() << "\n";
+    }
+}
+
+void moveFile(const std::string& source, const std::string& destination) {
+    try {
+        fs::rename(source, destination);
+        std::cout << "File moved from " << source << " to " << destination << "\n";
+    } catch (const std::exception& e) {
+        std::cerr << "Error moving file: " << e.what() << "\n";
+    }
+}
+
+void showHelp() {
+    std::cout << "Commands:\n";
+    std::cout << "  ls <path>          - List contents of a directory\n";
+    std::cout << "  mkdir <path>       - Create a new directory\n";
+    std::cout << "  cp <src> <dest>    - Copy a file from source to destination\n";
+    std::cout << "  mv <src> <dest>    - Move a file from source to destination\n";
+    std::cout << "  help               - Show this help message\n";
+    std::cout << "  exit               - Exit the program\n";
+}
+
+int main() {
+    std::string command;
+    std::string currentPath = fs::current_path().string();
+
+    std::cout << "Simple Command-Line File Manager\n";
+    std::cout << "Current Directory: " << currentPath << "\n";
+    showHelp();
+
+    while (true) {
+        std::cout << "> ";
+        std::getline(std::cin, command);
+
+        if (command.empty()) continue;
+
+        if (command == "exit") {
+            break;
+        } else if (command == "help") {
+            showHelp();
+        } else if (command.substr(0, 3) == "ls ") {
+            std::string path = command.substr(3);
+            if (path.empty()) path = ".";
+            listDirectory(path);
+        } else if (command.substr(0, 6) == "mkdir ") {
+            std::string path = command.substr(6);
+            if (!path.empty()) {
+                createDirectory(path);
+            } else {
+                std::cout << "Usage: mkdir <path>\n";
+            }
+        } else if (command.substr(0, 3) == "cp ") {
+            size_t spacePos = command.find(' ', 3);
+            if (spacePos != std::string::npos) {
+                std::string src = command.substr(3, spacePos - 3);
+                std::string dest = command.substr(spacePos + 1);
+                copyFile(src, dest);
+            } else {
+                std::cout << "Usage: cp <source> <destination>\n";
+            }
+        } else if (command.substr(0, 3) == "mv ") {
+            size_t spacePos = command.find(' ', 3);
+            if (spacePos != std::string::npos) {
+                std::string src = command.substr(3, spacePos - 3);
+                std::string dest = command.substr(spacePos + 1);
+                moveFile(src, dest);
+            } else {
+                std::cout << "Usage: mv <source> <destination>\n";
+            }
+        } else {
+            std::cout << "Unknown command. Type 'help' for a list of commands.\n";
+        }
+    }
+
+    std::cout << "Exiting file manager. Goodbye!\n";
+    return 0;
+}
